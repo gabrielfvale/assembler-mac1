@@ -24,6 +24,37 @@ commands = {
 }
 
 
+def colorize(msg, color):
+  final_msg = ''
+  if color == 'RED':
+    final_msg += '\033[0;37;41m %s \033[0m' % msg
+  elif color == 'GREEN':
+    final_msg += '\033[0;37;42m %s \033[0m' % msg
+  return final_msg
+
+
+def syntax_check(program):
+  hinted_code = ''
+  i = 0
+  syntax_ok = True
+  for line in program:
+    i += 1
+    if len(line) == 1:
+      if line[0] not in commands:
+        syntax_ok = False
+        hinted_code += '{} Linha {}: comando inválido\n   {}\n'.format(colorize('ERROR', 'RED'), i, *line)
+    if len(line) == 2:
+      if line[0] not in commands:
+        syntax_ok = False
+        hinted_code += '{} Linha {}: comando inválido\n   {} {}\n'.format(colorize('ERROR', 'RED'), i, *line)
+    elif len(line) == 3:
+      if line[1] not in commands:
+        syntax_ok = False
+        hinted_code += '{} Linha {}: comando inválido\n{} {} {}\n'.format(colorize('ERROR', 'RED'), i, *line)
+  print(hinted_code)
+  return syntax_ok
+
+
 def init(byte_array, num_of_vars):
   regs = [
     0x7300, # INIT
@@ -41,19 +72,28 @@ def init(byte_array, num_of_vars):
     byte_array.append(00)
 
 
-def main():
-  str_commands = []
+def write_output(byte_list):
+  # Converte o array de bytes em bytes
+  final_bytes = bytes(byte_list)
+
+  # Escreve o arquivo final
+  filename = sys.argv[1].split('.')[0] + '.exe'
+  with open(filename, 'wb') as binary_output:
+    # Write text or bytes to the file
+    bytes_written = binary_output.write(final_bytes)
+    print(colorize(filename, 'GREEN'))
+    print('Foram escritos %d bytes.' % bytes_written)
+
+
+def assemble(program):
   labels = {}
   byte_counter = 0
   # Cast bytes to bytearray
   byte_list = bytearray(b'\x00\x00\x00\x00')
   vars = []
 
-  with open(sys.argv[1], 'r') as program:
-    str_commands = [line.split() for line in program]
-
   # Identifica as labels
-  for line in str_commands:
+  for line in program:
     # Encontra cada label no programa
     if len(line) > 2 and line[0] not in commands:
       labels[line[0]] = 0
@@ -64,7 +104,7 @@ def main():
   byte_counter = 0
 
   # Contador de vars e cálculo da distância de labels
-  for line in str_commands:
+  for line in program:
     # Primeiro caso: linha possui operador e operando, sendo o último uma var ou um int
     if len(line) == 2 and line[1] not in labels:
       if not line[1].isnumeric() and line[1] not in vars:
@@ -86,7 +126,7 @@ def main():
   # 20 bytes de inicialização
   init(byte_list, len(vars))
 
-  for line in str_commands:
+  for line in program:
     mic_fix = ['goto', 'if_icmpeq', 'iflt', 'ifeq']
     # Adiciona o comando a lista de bytes
     byte_list.append(commands[line[0]])
@@ -110,15 +150,16 @@ def main():
           # Adiciona ambos os bytes da label
           byte_list.append(part1)
           byte_list.append(part2)
+  write_output(byte_list)
 
-  # Converte o array de bytes em bytes
-  final_bytes = bytes(byte_list)
 
-  # Escreve o arquivo final
-  filename = sys.argv[1].split('.')[0]
-  with open(filename + '.exe', 'wb') as binary_output:
-    # Write text or bytes to the file
-    bytes_written = binary_output.write(final_bytes)
-    print('Foram escritos %d bytes.' % bytes_written)
+def main():
+  program = []
+
+  with open(sys.argv[1], 'r') as program:
+    program = [line.split() for line in program]
+
+  if syntax_check(program):
+    assemble(program)
 
 main()
