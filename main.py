@@ -145,10 +145,10 @@ def assemble(program):
           label = labels[line[1]]
           # Checa se é necessário fazer fix de little-endian
           if line[0] in mic_fix:
-            #'<' Big-endian 'H' unsigned short
+            # '>' Big-endian 'H' unsigned short
             label = struct.pack('>H', label)
           else:
-            #'<' Big-endian 'H' unsigned short
+            # '<' Little-endian 'H' unsigned short
             label = struct.pack('<H', label)
           # Adiciona ambos os bytes da label
           for b in label:
