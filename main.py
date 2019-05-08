@@ -43,15 +43,15 @@ def syntax_check(program):
     if len(line) == 1:
       if line[0] not in commands:
         syntax_ok = False
-        hinted_code += '{} Linha {}: comando inválido\n   {}\n'.format(colorize('ERROR', 'RED'), i, *line)
+        hinted_code += '{} Linha {}: comando inválido\n   {}\n'.format(colorize('ERRO', 'RED'), i, *line)
     if len(line) == 2:
       if line[0] not in commands:
         syntax_ok = False
-        hinted_code += '{} Linha {}: comando inválido\n   {} {}\n'.format(colorize('ERROR', 'RED'), i, *line)
+        hinted_code += '{} Linha {}: comando inválido\n   {} {}\n'.format(colorize('ERRO', 'RED'), i, *line)
     elif len(line) == 3:
       if line[1] not in commands:
         syntax_ok = False
-        hinted_code += '{} Linha {}: comando inválido\n{} {} {}\n'.format(colorize('ERROR', 'RED'), i, *line)
+        hinted_code += '{} Linha {}: comando inválido\n{} {} {}\n'.format(colorize('ERRO', 'RED'), i, *line)
   print(hinted_code)
   return syntax_ok
 
