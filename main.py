@@ -1,4 +1,5 @@
 import sys
+import struct
 
 commands = {
     'nop': 0x01, 
@@ -64,12 +65,11 @@ def init(byte_array, num_of_vars):
     0x1001 + num_of_vars # SP
   ]
 
-  regs = [[reg & 0xff, (reg >> 8) & 0xff] for reg in regs]
   for reg in regs:
+    # '<' Little-endian; 'I' unsigned int
+    reg = struct.pack('<I', reg)
     for reg_byte in reg:
       byte_array.append(reg_byte)
-    byte_array.append(00)
-    byte_array.append(00)
 
 
 def write_output(byte_list):
@@ -89,7 +89,7 @@ def assemble(program):
   labels = {}
   byte_counter = 0
   # Cast bytes to bytearray
-  byte_list = bytearray(b'\x00\x00\x00\x00')
+  byte_list = bytearray()
   vars = []
 
   # Identifica as labels
@@ -99,7 +99,10 @@ def assemble(program):
       labels[line[0]] = 0
     byte_counter += len(line)
 
-  print('Q:', 20 + byte_counter)
+  # '<' Little-endian; 'I' unsigned int
+  Q = struct.pack('<I', 20 + byte_counter)
+  for b in Q:
+    byte_list.append(b)
 
   byte_counter = 0
 
@@ -142,14 +145,14 @@ def assemble(program):
           label = labels[line[1]]
           # Checa se é necessário fazer fix de little-endian
           if line[0] in mic_fix:
-            part1 = (label >> 8) & 0xff
-            part2 = label & 0xff
+            #'<' Big-endian 'H' unsigned short
+            label = struct.pack('>H', label)
           else:
-            part1 = label & 0xff
-            part2 = (label >> 8) & 0xff
+            #'<' Big-endian 'H' unsigned short
+            label = struct.pack('<H', label)
           # Adiciona ambos os bytes da label
-          byte_list.append(part1)
-          byte_list.append(part2)
+          for b in label:
+            byte_list.append(b)
   write_output(byte_list)
 
 
