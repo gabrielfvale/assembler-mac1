@@ -96,7 +96,7 @@ def assemble(program):
   for line in program:
     # Encontra cada label no programa
     if len(line) > 2 and line[0] not in commands:
-      labels[line[0]] = 0
+      labels[line[0]] = []
     byte_counter += len(line)
 
   # '<' Little-endian; 'I' unsigned int
@@ -115,12 +115,14 @@ def assemble(program):
       byte_counter += len(line)
     # Segundo caso: linha possui operador e label
     elif len(line) == 2 and line[1] in labels:
-      labels[line[1]] = byte_counter + 1
+      labels[line[1]].append(byte_counter + 1)
       byte_counter += len(line) + 1
     # Terceiro caso: linha possui label, operador e operando
     elif len(line) == 3 and line[0] in labels:
       # Cálculo da distância entre labels
-      labels[line[0]] = byte_counter + 1 - labels[line[0]]
+      label = line[0]
+      for caller in range(0, len(labels[line[0]])):
+        labels[label][caller] = byte_counter + 1 - labels[label][caller]
       del line[0]
       byte_counter += len(line)
     else:
@@ -142,16 +144,16 @@ def assemble(program):
         # Adiciona o valor a lista de bytes
         byte_list.append(int(line[1]))
       elif line[1] in labels:
-          label = labels[line[1]]
+          label = line[1]
+          caller = labels[label][0]
+          del labels[label][0]
           # Checa se é necessário fazer fix de little-endian
-          if line[0] in mic_fix:
-            # '>' Big-endian 'H' unsigned short
-            label = struct.pack('>H', label)
-          else:
-            # '<' Little-endian 'H' unsigned short
-            label = struct.pack('<H', label)
+          # '<' Little-endian 'H' unsigned short
+          # '>' Big-endian 'H' unsigned short
+          type = '>H' if line[0] in mic_fix else '<H'
+          caller = struct.pack(type, caller)
           # Adiciona ambos os bytes da label
-          for b in label:
+          for b in caller:
             byte_list.append(b)
   write_output(byte_list)
 
